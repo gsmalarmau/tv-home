@@ -1,0 +1,59 @@
+# Put this file in your fork at:  .github/workflows/build-launcher.yml
+# Run it from the repo's Actions tab ("Build launcher" -> Run workflow), then download the APK
+# from the finished run's "Artifacts" section.
+#
+# NOTE: written without being able to run it. The tv-home build script was not visible to me,
+# so the "Show launcher folder" step prints it into the log. If the Build step fails, the log
+# tells us what to change.
+name: Build launcher
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK pieces (build-tools 34, platform 34)
+        run: |
+          export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKM" ] || SDKM="$(command -v sdkmanager)"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+
+      - name: Show launcher folder and build script (for diagnosis)
+        run: |
+          ls -la launcher
+          echo "-----"
+          sed -n '1,200p' launcher/build-and-install.sh || true
+
+      - name: Build
+        run: |
+          if [ -f launcher/build.sh ]; then
+            bash launcher/build.sh
+          else
+            echo "No launcher/build.sh found. Read the listing above and send it to Claude."
+            exit 1
+          fi
+
+      - name: Collect APK
+        run: |
+          mkdir -p out
+          find launcher -name '*.apk' -exec cp {} out/ \;
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tv-launcher-apk
+          path: out/*.apk
+          if-no-files-found: error
