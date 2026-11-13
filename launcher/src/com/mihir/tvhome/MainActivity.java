@@ -254,7 +254,7 @@ public class MainActivity extends Activity {
         band.setColor(0x1FFFFFFF);
         band.setStroke(dp(1), 0x14FFFFFF);
         dockRow.setBackground(band);
-        bottom.addView(dockRow, new LinearLayout.LayoutParams(-1, -2));
+        bottom.addView(dockRow, new LinearLayout.LayoutParams(-2, -2));
 
         appsLabel = text(11, "sans-serif-medium", 0x99FFFFFF);
         appsLabel.setText("ALL APPS");
@@ -372,7 +372,8 @@ public class MainActivity extends Activity {
 
         for (int i = 0; i < dock.size(); i++) {
             View tile = tile(dock.get(i), true);
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1f);
+            int dockTileW = Math.round(getResources().getDisplayMetrics().widthPixels * 0.136f); // a quarter of the old area
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dockTileW, -2);
             p.setMargins(i == 0 ? 0 : dp(10), 0, i == dock.size() - 1 ? 0 : dp(10), 0);
             dockRow.addView(tile, p);
         }
